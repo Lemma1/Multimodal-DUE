@@ -1,13 +1,17 @@
 from models import *
 
-cbd_parking = parking_lot(5, 105, 180, 30000)
-d2_parking = parking_lot(1, 106, 180, 50000)
-d3_parking = parking_lot(1, 107, 180, 50000)
+cbd_parking = parking_lot(10, 105, 120, 10000)
+d2_parking = parking_lot(3, 106, 60, 20000)
+d3_parking = parking_lot(3, 107, 60, 20000)
 
 
-target_time = 3600
-early_penalty = 0.7
-late_penalty = 10
+target_time = 2880
+early_penalty = 3.9 / 60.0 / 60.0 * 5.0
+late_penalty = 15.2 / 60.0 / 60.0 * 5.0
+T2M = 6.4 / 60.0 / 60.0 * 5.0
+
+BUS_FREQ = 15
+
 
 ##################################################################
 #####          O1 to D1
@@ -24,8 +28,8 @@ single_driving_config['link_list'] = [101, 2, 10, 16, 105]
 single_driving_config['path_ID'] = 0
 single_driving_config['number_people'] = 1
 single_driving_config['parking_lot'] = cbd_parking
-single_driving_config['walking_time1'] = 3
-single_driving_config['walking_time2'] = 3
+single_driving_config['walking_time1'] = 0.0
+single_driving_config['walking_time2'] = 60.0
 p11000 = make_path(single_driving_config)
 
 single_driving_config = dict()
@@ -40,8 +44,8 @@ single_driving_config['link_list'] = [101, 1, 9, 15, 105]
 single_driving_config['path_ID'] = 1
 single_driving_config['number_people'] = 1
 single_driving_config['parking_lot'] = cbd_parking
-single_driving_config['walking_time1'] = 3
-single_driving_config['walking_time2'] = 3
+single_driving_config['walking_time1'] = 0
+single_driving_config['walking_time2'] = 60.0
 p11001 = make_path(single_driving_config)
 
 
@@ -58,8 +62,8 @@ multiple_driving_config['link_list'] = [101, 2, 10, 16, 105]
 multiple_driving_config['path_ID'] = 0
 multiple_driving_config['number_people'] = 2
 multiple_driving_config['parking_lot'] = cbd_parking
-multiple_driving_config['walking_time1'] = 3
-multiple_driving_config['walking_time2'] = 3
+multiple_driving_config['walking_time1'] = 0
+multiple_driving_config['walking_time2'] = 60.0
 p11010 = make_path(multiple_driving_config)
 
 
@@ -71,10 +75,10 @@ metro_config['late_penalty'] = late_penalty
 metro_config['O'] = 1
 metro_config['D'] = 1
 metro_config['ID_list'] = [1, 0, 0]
-metro_config['walking_time1'] = 40
-metro_config['metro_time'] = 100
-metro_config['walking_time2'] = 30
-metro_config['metro_fee'] = 5
+metro_config['walking_time1'] = 60.0
+metro_config['metro_time'] = 40.0 * 60.0
+metro_config['walking_time2'] = 60.0
+metro_config['metro_fee'] = 3.75
 p11100 = make_path(metro_config)
 
 
@@ -91,11 +95,11 @@ pnr_config['car_path_ID'] = 8
 pnr_config['transit_link_list'] = [9, 15, 106]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 5
-pnr_config['before_drive_walking_time'] = 3
-pnr_config['switching_time'] = 5
-pnr_config['after_transit_walking_time'] = 1
-pnr_config['transit_time'] = 2
+pnr_config['transit_fare'] = 2.75
+pnr_config['before_drive_walking_time'] = 60.0
+pnr_config['switching_time'] = 60.0
+pnr_config['after_transit_walking_time'] = 60.0
+pnr_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p11200 = make_path(pnr_config)
 
 pnr_config = dict()
@@ -111,11 +115,11 @@ pnr_config['car_path_ID'] = 9
 pnr_config['transit_link_list'] = [9, 15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 5
-pnr_config['before_drive_walking_time'] = 3
-pnr_config['switching_time'] = 5
-pnr_config['after_transit_walking_time'] = 1
-pnr_config['transit_time'] = 2
+pnr_config['transit_fare'] = 2.75
+pnr_config['before_drive_walking_time'] = 60.0
+pnr_config['switching_time'] = 60.0
+pnr_config['after_transit_walking_time'] = 60.0
+pnr_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p11201 = make_path(pnr_config)
 
 
@@ -132,11 +136,11 @@ pnr_config['car_path_ID'] = 10
 pnr_config['transit_link_list'] = [15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 5
-pnr_config['before_drive_walking_time'] = 3
-pnr_config['switching_time'] = 5
-pnr_config['after_transit_walking_time'] = 1
-pnr_config['transit_time'] = 2
+pnr_config['transit_fare'] = 2.75
+pnr_config['before_drive_walking_time'] = 60.0
+pnr_config['switching_time'] = 60.0
+pnr_config['after_transit_walking_time'] = 60.0
+pnr_config['transit_time'] = 7.5 * 60.0
 p11210 = make_path(pnr_config)
 
 pnr_config = dict()
@@ -152,11 +156,11 @@ pnr_config['car_path_ID'] = 11
 pnr_config['transit_link_list'] = [15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d3_parking
-pnr_config['transit_fare'] = 5
-pnr_config['before_drive_walking_time'] = 3
-pnr_config['switching_time'] = 5
-pnr_config['after_transit_walking_time'] = 1
-pnr_config['transit_time'] = 2
+pnr_config['transit_fare'] = 2.75
+pnr_config['before_drive_walking_time'] = 60.0
+pnr_config['switching_time'] = 60.0
+pnr_config['after_transit_walking_time'] = 60.0
+pnr_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p11211 = make_path(pnr_config)
 
 ##################################################################
@@ -175,8 +179,8 @@ single_driving_config['link_list'] = [103, 7, 10, 16, 105]
 single_driving_config['path_ID'] = 3
 single_driving_config['number_people'] = 1
 single_driving_config['parking_lot'] = cbd_parking
-single_driving_config['walking_time1'] = 3
-single_driving_config['walking_time2'] = 3
+single_driving_config['walking_time1'] = 0.0
+single_driving_config['walking_time2'] = 60.0
 p31000 = make_path(single_driving_config)
 
 single_driving_config = dict()
@@ -191,8 +195,8 @@ single_driving_config['link_list'] = [103, 5, 3, 9, 15, 105]
 single_driving_config['path_ID'] = 4
 single_driving_config['number_people'] = 1
 single_driving_config['parking_lot'] = cbd_parking
-single_driving_config['walking_time1'] = 3
-single_driving_config['walking_time2'] = 3
+single_driving_config['walking_time1'] = 0.0
+single_driving_config['walking_time2'] = 60.0
 p31001 = make_path(single_driving_config)
 
 
@@ -208,8 +212,8 @@ multiple_driving_config['link_list'] = [103, 7, 10, 16, 105]
 multiple_driving_config['path_ID'] = 3
 multiple_driving_config['number_people'] = 2
 multiple_driving_config['parking_lot'] = cbd_parking
-multiple_driving_config['walking_time1'] = 3
-multiple_driving_config['walking_time2'] = 3
+multiple_driving_config['walking_time1'] = 0.0
+multiple_driving_config['walking_time2'] = 60.0
 p31010 = make_path(multiple_driving_config)
 
 
@@ -238,10 +242,10 @@ transit_config['O'] = 3
 transit_config['D'] = 1
 transit_config['link_list'] = [102, 3, 9, 15, 105]
 transit_config['path_ID'] = -1
-transit_config['transit_fare'] = 5
-transit_config['walking_time1'] = 4
-transit_config['walking_time2'] = 5
-transit_config['transit_time'] = 40
+transit_config['transit_fare'] = 2.75
+transit_config['walking_time1'] = 60.0
+transit_config['walking_time2'] = 60.0
+transit_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p31110 = make_path(transit_config)
 
 
@@ -258,11 +262,11 @@ pnr_config['car_path_ID'] = 12
 pnr_config['transit_link_list'] = [9, 15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 5
-pnr_config['before_drive_walking_time'] = 3
-pnr_config['switching_time'] = 5
-pnr_config['after_transit_walking_time'] = 1
-pnr_config['transit_time'] = 2
+pnr_config['transit_fare'] = 2.75
+pnr_config['before_drive_walking_time'] = 60.0
+pnr_config['switching_time'] = 60.0
+pnr_config['after_transit_walking_time'] = 60.0
+pnr_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p31200 = make_path(pnr_config)
 
 ##################################################################
@@ -281,8 +285,8 @@ single_driving_config['link_list'] = [104, 13, 16, 105]
 single_driving_config['path_ID'] = 5
 single_driving_config['number_people'] = 1
 single_driving_config['parking_lot'] = cbd_parking
-single_driving_config['walking_time1'] = 3
-single_driving_config['walking_time2'] = 3
+single_driving_config['walking_time1'] = 0.0
+single_driving_config['walking_time2'] = 60.0
 p41000 = make_path(single_driving_config)
 
 single_driving_config = dict()
@@ -297,8 +301,8 @@ single_driving_config['link_list'] = [104, 12, 15, 105]
 single_driving_config['path_ID'] = 6
 single_driving_config['number_people'] = 1
 single_driving_config['parking_lot'] = cbd_parking
-single_driving_config['walking_time1'] = 3
-single_driving_config['walking_time2'] = 3
+single_driving_config['walking_time1'] = 0.0
+single_driving_config['walking_time2'] = 60.0
 p41001 = make_path(single_driving_config)
 
 
@@ -315,8 +319,8 @@ multiple_driving_config['link_list'] = [104, 13, 16, 105]
 multiple_driving_config['path_ID'] = 5
 multiple_driving_config['number_people'] = 2
 multiple_driving_config['parking_lot'] = cbd_parking
-multiple_driving_config['walking_time1'] = 3
-multiple_driving_config['walking_time2'] = 3
+multiple_driving_config['walking_time1'] = 0.0
+multiple_driving_config['walking_time2'] = 60.0
 p41010 = make_path(multiple_driving_config)
 
 
@@ -334,11 +338,11 @@ pnr_config['car_path_ID'] = 13
 pnr_config['transit_link_list'] = [15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d3_parking
-pnr_config['transit_fare'] = 5
-pnr_config['before_drive_walking_time'] = 3
-pnr_config['switching_time'] = 5
-pnr_config['after_transit_walking_time'] = 1
-pnr_config['transit_time'] = 2
+pnr_config['transit_fare'] = 2.75
+pnr_config['before_drive_walking_time'] = 60.0
+pnr_config['switching_time'] = 60.0
+pnr_config['after_transit_walking_time'] = 60.0
+pnr_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p41200 = make_path(pnr_config)
 
 
@@ -367,31 +371,37 @@ choice_dict[3][2] = 0
 choice_dict[4][3] = 0
 
 
+
+trend = np.array([59857.4375, 69209.0000, 76571.9375, 83934.8750, 91297.8125, 98660.7500, 97057.6875, 95454.6250,
+        93851.5625, 92248.5000, 88816.9375, 85385.3750, 81953.8125, 78522.2500, 77981.6875, 77441.1250])
+trend = trend / np.sum(trend)
+
+
 demand_dict = dict()
 demand_dict[1] = dict()
 demand_dict[3] = dict()
 demand_dict[4] = dict()
-demand_dict[1][1] = np.ones(16) * 200
-demand_dict[3][1] = np.ones(16) * 150
-demand_dict[4][1] = np.ones(16) * 100
+demand_dict[1][1] = 15000.0 * trend
+demand_dict[3][1] = 10000.0 * trend
+demand_dict[4][1] = 5000.0 * trend
 
 
 ab_dict = dict()
 ab_dict['a'] = dict()
 ab_dict['a']['first'] = dict()
-ab_dict['a']['first'][0] = 0    # drive
-ab_dict['a']['first'][1] = 0    # transit
-ab_dict['a']['first'][2] = 0    # pnr
+ab_dict['a']['first'][0] = 1    # drive
+ab_dict['a']['first'][1] = 1.5    # transit
+ab_dict['a']['first'][2] = 2.0    # pnr
 ab_dict['a']['second'] = dict()
 ab_dict['a']['second'][0] = dict()
 ab_dict['a']['second'][1] = dict()
 ab_dict['a']['second'][2] = dict()
-ab_dict['a']['second'][0][0] = 0   # single drive
-ab_dict['a']['second'][0][1] = 0   # multiple drive
-ab_dict['a']['second'][1][0] = 0   # bus
-ab_dict['a']['second'][1][1] = 0   # metro
-ab_dict['a']['second'][2][0] = 0   # pnr1
-ab_dict['a']['second'][2][1] = 0   # pnr2
+ab_dict['a']['second'][0][0] = 1   # single drive
+ab_dict['a']['second'][0][1] = 1   # multiple drive
+ab_dict['a']['second'][1][0] = 1.5   # bus
+ab_dict['a']['second'][1][1] = 1.5   # metro
+ab_dict['a']['second'][2][0] = 2   # pnr1
+ab_dict['a']['second'][2][1] = 2   # pnr2
 
 ab_dict['b'] = dict()
 ab_dict['b']['first'] = dict()

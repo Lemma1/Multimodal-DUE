@@ -8,12 +8,17 @@ from MNM_mcnb import *
 import gp
 import shutil
 
+
+
+
 IMPLEMENT_TYPES = ['single_drive', 'multiple_drive', 'transit', 'pnr', 'metro']
 
-
+BUS_FREQ = 15
+TRHOUGH_TRUCK_PER_INTERVAL = 100
+T2M = 6.4 / 60.0 / 60.0 * 5.0
 UNIT_TIME = np.float(5)
-T2M = np.float(0.1)
-TAU = 0.001
+TAU = 1
+FLOW_SCALAR = 10.0
 
 class parking_lot():
   def __init__(self, base_price, link_ID, ave_parking_time, cap):
@@ -26,7 +31,7 @@ class parking_lot():
     return self.base_price
 
   def get_cruise_time(self, t, dta):
-    occ = dta.get_car_link_out_num(self.link_ID, t)
+    occ = dta.get_car_link_out_num(self.link_ID, t) / FLOW_SCALAR
     return self.ave_parking_time / (1 - occ / self.cap)
 
 # class link():
@@ -77,11 +82,11 @@ class driving_route(base_path):
       idx = link_ID_list.index(link_ID)
       arrival_time += dta.get_car_link_tt(np.array([arrival_time]))[idx, 0]
     arrival_time += self.walking_time2
-    arrival_time += self.parking_lot.get_cruise_time(arrival_time, dta)
+    arrival_time += self.parking_lot.get_cruise_time(arrival_time, dta) / UNIT_TIME
     return arrival_time - t
 
   def get_carpool_cost(self):
-    return self.number_people
+    return np.float(self.number_people) - 1.0
 
   def get_amortized_parkingfee(self):
     return self.parking_lot.get_price() / np.float(self.number_people)
@@ -238,8 +243,8 @@ class Multimode_DUE():
         car_flow[car_path_idx, :] = path_matrix[i, :]
         # path_idx = self.simulation_path_list.index(path.transit_part.path_ID)
         # truck_flow[path_idx, :] = path_matrix[i, :]
-    truck_flow[2, :] = np.ones(self.num_assign_interval) * 10
-    truck_flow[7, :] = np.ones(self.num_assign_interval) * 10
+    truck_flow[2, :] = np.ones(self.num_assign_interval) * (15.0 / BUS_FREQ) * 5 
+    truck_flow[7, :] = np.ones(self.num_assign_interval) * TRHOUGH_TRUCK_PER_INTERVAL
     return car_flow, truck_flow
 
 
@@ -280,6 +285,7 @@ class Multimode_DUE():
 
   def get_Lambda_matrix(self, dta, path_list, path_matrix, demand_dict, ab_dict):
     Lambda_matrix = self.get_cost_matrix(dta, path_list)
+    # print Lambda_matrix
     # for O in demand_dict.keys():
     #   for D in demand_dict[O].keys():
     #     tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
@@ -338,6 +344,7 @@ class Multimode_DUE():
       dta = self.get_simulation(car_flow, truck_flow, choice_dict)
       # print "3"
       Lambda_matrix = self.get_Lambda_matrix(dta, path_list, path_matrix, demand_dict, ab_dict)
+      # print Lambda_matrix
       # print "4"
       gap = self.get_merit_gap(Lambda_matrix, path_matrix, path_list, demand_dict)
       path_matrix = self.update_path_matrix(Lambda_matrix, path_matrix, path_list, demand_dict)
