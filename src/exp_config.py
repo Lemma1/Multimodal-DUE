@@ -346,3 +346,22 @@ p41200 = make_path(pnr_config)
 path_list = [p11000, p11001, p11010, p11100, p11200, p11201, p11210, p11211, 
              p31000, p31001, p31010, p31110, p31200,
              p41000, p41001, p41010, p41200]
+
+
+
+choice_dict = dict()
+choice_dict[1] = dict()
+choice_dict[2] = dict()
+choice_dict[3] = dict()
+choice_dict[4] = dict()
+choice_dict[5] = dict()
+choice_dict[1][1] = 0
+choice_dict[2][1] = 1
+choice_dict[3][1] = 0
+choice_dict[4][1] = 0
+choice_dict[5][1] = 1
+choice_dict[1][2] = 0
+choice_dict[1][3] = 0
+choice_dict[3][2] = 0
+# choice_dict[3][3] = 0
+choice_dict[4][3] = 0
