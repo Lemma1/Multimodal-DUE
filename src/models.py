@@ -5,23 +5,29 @@ import sys
 sys.path.append("/home/lemma/Documents/MAC-POSTS/side_project/network_builder")
 import MNMAPI
 from MNM_mcnb import *
+import gp
+import shutil
 
 IMPLEMENT_TYPES = ['single_drive', 'multiple_drive', 'transit', 'pnr', 'metro']
 
 
 UNIT_TIME = np.float(5)
 T2M = np.float(0.1)
-
+TAU = 0.001
 
 class parking_lot():
-  def __init__(self, base_price):
+  def __init__(self, base_price, link_ID, ave_parking_time, cap):
     self.base_price = base_price
+    self.link_ID = link_ID
+    self.ave_parking_time = ave_parking_time / UNIT_TIME
+    self.cap = np.float(cap)
 
   def get_price(self):
     return self.base_price
 
-  def get_cruise_time(self, t):
-    return 0
+  def get_cruise_time(self, t, dta):
+    occ = dta.get_car_link_out_num(self.link_ID, t)
+    return self.ave_parking_time / (1 - occ / self.cap)
 
 # class link():
 #   def __init__(self):
@@ -45,14 +51,14 @@ class base_path(object):
     self.D = D
     self.path_type = path_type
 
-  def get_cost():
+  def get_cost(self, t, link_ID_list, dta):
     raise Exception('Method in base class should not be called!')
 
-  def get_travel_time():
+  def get_travel_time(self, t, link_ID_list, dta):
     raise Exception('Method in base class should not be called!')
 
   def get_wrongtime_penalty(self, arrival_time):
-    return np.max(self.late_penalty * (arrival_time - self.target_time), self.early_penalty * (self.target_time -arrival_time))
+    return np.maximum(self.late_penalty * (arrival_time - self.target_time), self.early_penalty * (self.target_time -arrival_time))
 
 class driving_route(base_path):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, O, D, ID_list, link_list, path_ID, number_people, parking_lot, walking_time1, walking_time2):
@@ -69,16 +75,16 @@ class driving_route(base_path):
     arrival_time = t + self.walking_time1
     for link_ID in self.link_list:
       idx = link_ID_list.index(link_ID)
-      arrival_time += dta.get_car_link_tt(np.array[arrival_time])[idx, 0]
+      arrival_time += dta.get_car_link_tt(np.array([arrival_time]))[idx, 0]
     arrival_time += self.walking_time2
-    arrival_time += self.parking_lot.get_cruise_time(arrival_time)
+    arrival_time += self.parking_lot.get_cruise_time(arrival_time, dta)
     return arrival_time - t
 
   def get_carpool_cost(self):
     return self.number_people
 
   def get_amortized_parkingfee(self):
-    return np.float(self.parking_fee) / np.float(number_people)
+    return self.parking_lot.get_price() / np.float(self.number_people)
 
 
   def get_cost(self, t, link_ID_list, dta):
@@ -101,7 +107,7 @@ class transit_route(base_path):
     arrival_time += self.transit_time
     for link_ID in self.link_list:
       idx = link_ID_list.index(link_ID)
-      arrival_time += dta.get_trcuk_link_tt(np.array[arrival_time])[idx, 0]
+      arrival_time += dta.get_truck_link_tt(np.array([arrival_time]))[idx, 0]
     arrival_time += self.walking_time2
     return arrival_time - t
 
@@ -124,10 +130,19 @@ class park_ride_route(base_path):
     self.driving_part = driving_route(path_type, target_time, early_penalty, late_penalty, O, D, ID_list, car_link_list, car_path_ID, 1, parking_lot, before_drive_walking_time, switching_time)
     self.transit_part = transit_route(path_type, target_time, early_penalty, late_penalty, O, D, ID_list, transit_link_list, transit_path_ID, transit_fare, 0, after_transit_walking_time, transit_time)
 
+  def get_pnr_inconvenience(self):
+    return np.float(0)
+
+
   def get_travel_time(self, t, link_ID_list, dta):
     arrival_time = self.driving_part.get_travel_time(t, link_ID_list, dta)
-    arrival_time += self.driving_part.get_travel_time(arrival_time, link_ID_list, dta)
+    arrival_time += self.transit_part.get_travel_time(arrival_time, link_ID_list, dta)
     return arrival_time - t
+
+  def get_cost(self, t, link_ID_list, dta):
+    tt = self.get_travel_time(t, link_ID_list, dta)
+    late_penalty = self.get_wrongtime_penalty(t + tt)
+    return T2M * tt + late_penalty + self.driving_part.get_amortized_parkingfee() + self.transit_part.get_transit_fee() + self.get_pnr_inconvenience()
 
 class metro(base_path):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, O, D, ID_list, walking_time1, metro_time, walking_time2, metro_fee):
@@ -149,7 +164,7 @@ class metro(base_path):
   def get_cost(self, t, link_ID_list, dta):
     tt = self.get_travel_time(t, link_ID_list, dta)
     late_penalty = self.get_wrongtime_penalty(t + tt)
-    return  T2M * tt + late_penalty + get_metro_fee() + self.get_metro_inconvenience()
+    return  T2M * tt + late_penalty + self.get_metro_fee() + self.get_metro_inconvenience()
 
 
 def make_path(config):
@@ -190,6 +205,21 @@ class Multimode_DUE():
     self.num_simulation_path = nb.config.config_dict['FIXED']['num_path']
     self.num_assign_interval = nb.config.config_dict['DTA']['max_interval']
     self.simulation_path_list = range(nb.config.config_dict['FIXED']['num_path'])
+    self.nb = nb
+
+
+  def init_path_matrix(self, path_list, demand_dict):
+    path_matrix = np.zeros((len(path_list), self.num_assign_interval))
+    for O in demand_dict.keys():
+      for D in demand_dict[O].keys():
+        tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
+        assert (len(tmp_path_list) > 0)
+        total_demand = demand_dict[O][D]
+        for tmp_path in tmp_path_list:
+          idx = path_list.index(tmp_path)
+          path_matrix[idx, :] = total_demand / np.float(len(tmp_path_list))
+    return path_matrix
+
 
   def form_demand_for_simulation(self, path_list, path_matrix):
     assert(len(path_list) == path_matrix.shape[0])
@@ -217,21 +247,113 @@ class Multimode_DUE():
     data_folder = '../data/input_files_small_multiclass'
     cache_folder = 'cache'
     nb = MNM_network_builder()
+    # print '11'
     nb.load_from_folder(data_folder)
+    # print '12'
     nb.update_demand_path(car_flow.flatten(order = 'F'), truck_flow.flatten(order = 'F'), choice_dict)
+    # print '13'
     nb.dump_to_folder(cache_folder)
+    # print '14'
     link_ID_list = list(map(lambda x: x.ID, nb.link_list))
     dta = MNMAPI.mcdta_api()
+    # print '15'
     dta.initialize(cache_folder)
+    # print '16'
     dta.register_links(link_ID_list)
+    # print '17'
     dta.run_whole()
+    # print '18'
+    # shutil.rmtree(cache_folder)
+    # print '19'
     return dta
 
-  def get_cost_matrix(self, dta):
-    pass
+  def get_cost_matrix(self, dta, path_list):
+    cost_matrix = np.zeros((len(path_list), self.num_assign_interval))
+    assign_freq = self.nb.config.config_dict['DTA']['assign_frq']
+    link_ID_list = list(map(lambda x: x.ID, self.nb.link_list))
+    for i in range(len(path_list)):
+      passenger_path = path_list[i]
+      # print passenger_path
+      for t in range(self.num_assign_interval):
+        cost_matrix[i, t] = passenger_path.get_cost(np.float(t * assign_freq), link_ID_list, dta)
+    return cost_matrix
 
-  def get_Lambda_matrix(self, dta):
-    pass
+  def get_Lambda_matrix(self, dta, path_list, path_matrix, demand_dict, ab_dict):
+    Lambda_matrix = self.get_cost_matrix(dta, path_list)
+    # for O in demand_dict.keys():
+    #   for D in demand_dict[O].keys():
+    #     tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
+    #     assert (len(tmp_path_list) > 0)
+    #     first_mode_list = 
+    #     tmp_path_idx_list = list(map(lambda x: path_list.index(x), tmp_path_list))
+    #     for tmp_path in tmp_path_list:
+    #       idx = path_list.index(tmp_path)
+    for i, path in enumerate(path_list):
+      first_mode_path_list = list(filter(lambda x: x.O == path.O and x.D == path.D and x.ID_list[0] == path.ID_list[0], path_list))
+      second_mode_path_list = list(filter(lambda x: x.O == path.O and x.D == path.D and x.ID_list[0] == path.ID_list[0] and x.ID_list[1] == path.ID_list[1], path_list))
+      first_mode_path_idx_list = list(map(lambda x: path_list.index(x), first_mode_path_list))
+      second_mode_path_idx_list = list(map(lambda x: path_list.index(x), second_mode_path_list))
+      logh1 = safelog(np.sum(path_matrix[first_mode_path_idx_list, :], axis = 0))
+      logh2 = safelog(np.sum(path_matrix[second_mode_path_idx_list, :], axis = 0))
+      # print "logh1", logh1
+      # print "logh2", logh2
+      Lambda_matrix[i, :] += ((ab_dict['a']['first'][path.ID_list[0]] + logh1) / ab_dict['b']['first'][path.ID_list[0]]
+                            - logh1 / ab_dict['b']['first'][path.ID_list[0]]
+                            + (ab_dict['a']['second'][path.ID_list[0]][path.ID_list[1]] + logh2) / ab_dict['b']['second'][path.ID_list[0]][path.ID_list[1]])
+    return Lambda_matrix
 
-  def update_path_matrix(self, cost_matrix, path_matrix):
-    pass
+  def get_merit_gap(self, Lambda_matrix, path_matrix, path_list, demand_dict):
+    gap = np.float(0)
+    for O in demand_dict.keys():
+      for D in demand_dict[O].keys():
+        tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
+        tmp_path_idx_list = list(map(lambda x: path_list.index(x), tmp_path_list))
+        # print tmp_path_idx_list
+        Pi = np.min(Lambda_matrix[tmp_path_idx_list, :], axis = 0)
+        # print Pi
+        gap += np.sum(path_matrix[tmp_path_idx_list, :] * (Lambda_matrix[tmp_path_idx_list, :] - Pi))
+    return gap
+
+  def update_path_matrix(self, Lambda_matrix, path_matrix, path_list, demand_dict):
+    new_path_matrix = np.zeros(path_matrix.shape)
+    tmp_target_matrix = path_matrix - TAU * Lambda_matrix
+    for O in demand_dict.keys():
+      for D in demand_dict[O].keys():
+        tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
+        tmp_path_idx_list = list(map(lambda x: path_list.index(x), tmp_path_list))
+        for t in range(self.num_assign_interval):
+          new_path_matrix[tmp_path_idx_list, t] = gp.get_projection(demand_dict[O][D][t], tmp_target_matrix[tmp_path_idx_list, t])
+    new_path_matrix = np.maximum(new_path_matrix, 0.0)
+    return new_path_matrix
+
+
+  def solve(self, init_path_matrix, path_list, demand_dict, ab_dict, choice_dict, num_iters = 100):
+    path_matrix = init_path_matrix
+    gap_record = list()
+    dta_list = list()
+    for i in range(num_iters):
+      # print "1"
+      car_flow, truck_flow = self.form_demand_for_simulation(path_list, path_matrix)
+      # print "2"
+      dta = self.get_simulation(car_flow, truck_flow, choice_dict)
+      # print "3"
+      Lambda_matrix = self.get_Lambda_matrix(dta, path_list, path_matrix, demand_dict, ab_dict)
+      # print "4"
+      gap = self.get_merit_gap(Lambda_matrix, path_matrix, path_list, demand_dict)
+      path_matrix = self.update_path_matrix(Lambda_matrix, path_matrix, path_list, demand_dict)
+      print i, gap
+      gap_record.append(gap)
+      dta_list.append(dta)
+      # try:
+      #   del dta
+      # except:
+      #   print "delete error"
+      #   pass
+      # print path_matrix
+    return path_matrix, dta_list
+
+
+def safelog(x):
+  # print "safe log", x
+  safe_x = np.maximum(x , 1e-10)
+  return np.log(safe_x)

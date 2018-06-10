@@ -1,8 +1,8 @@
 from models import *
 
-cbd_parking = parking_lot(5)
-d2_parking = parking_lot(1)
-d3_parking = parking_lot(1)
+cbd_parking = parking_lot(5, 105, 180, 30000)
+d2_parking = parking_lot(1, 106, 180, 50000)
+d3_parking = parking_lot(1, 107, 180, 50000)
 
 
 target_time = 3600
@@ -365,3 +365,46 @@ choice_dict[1][3] = 0
 choice_dict[3][2] = 0
 # choice_dict[3][3] = 0
 choice_dict[4][3] = 0
+
+
+demand_dict = dict()
+demand_dict[1] = dict()
+demand_dict[3] = dict()
+demand_dict[4] = dict()
+demand_dict[1][1] = np.ones(16) * 200
+demand_dict[3][1] = np.ones(16) * 150
+demand_dict[4][1] = np.ones(16) * 100
+
+
+ab_dict = dict()
+ab_dict['a'] = dict()
+ab_dict['a']['first'] = dict()
+ab_dict['a']['first'][0] = 0    # drive
+ab_dict['a']['first'][1] = 0    # transit
+ab_dict['a']['first'][2] = 0    # pnr
+ab_dict['a']['second'] = dict()
+ab_dict['a']['second'][0] = dict()
+ab_dict['a']['second'][1] = dict()
+ab_dict['a']['second'][2] = dict()
+ab_dict['a']['second'][0][0] = 0   # single drive
+ab_dict['a']['second'][0][1] = 0   # multiple drive
+ab_dict['a']['second'][1][0] = 0   # bus
+ab_dict['a']['second'][1][1] = 0   # metro
+ab_dict['a']['second'][2][0] = 0   # pnr1
+ab_dict['a']['second'][2][1] = 0   # pnr2
+
+ab_dict['b'] = dict()
+ab_dict['b']['first'] = dict()
+ab_dict['b']['first'][0] = 1    # drive
+ab_dict['b']['first'][1] = 1    # transit
+ab_dict['b']['first'][2] = 1    # pnr
+ab_dict['b']['second'] = dict()
+ab_dict['b']['second'][0] = dict()
+ab_dict['b']['second'][1] = dict()
+ab_dict['b']['second'][2] = dict()
+ab_dict['b']['second'][0][0] = 1   # single drive
+ab_dict['b']['second'][0][1] = 1   # multiple drive
+ab_dict['b']['second'][1][0] = 1   # bus
+ab_dict['b']['second'][1][1] = 1   # metro
+ab_dict['b']['second'][2][0] = 1   # pnr1
+ab_dict['b']['second'][2][1] = 1   # pnr2
