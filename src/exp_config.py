@@ -1,14 +1,18 @@
 from models import *
 
-cbd_parking = parking_lot(10, 105, 120, 10000)
-d2_parking = parking_lot(3, 106, 60, 20000)
-d3_parking = parking_lot(3, 107, 60, 20000)
+parking_surge = 1.0
+
+cbd_parking = parking_lot(10 * parking_surge, 105, 120, 30000)
+d2_parking = parking_lot(3 * parking_surge, 106, 60, 50000)
+d3_parking = parking_lot(3 * parking_surge, 107, 60, 50000)
 
 
 target_time = 2880
 early_penalty = 3.9 / 60.0 / 60.0 * 5.0
 late_penalty = 15.2 / 60.0 / 60.0 * 5.0
-T2M = 6.4 / 60.0 / 60.0 * 5.0
+
+METRO_FARE = 3.75 * 1.0
+BUS_FARE = 2.75 * 1.0
 
 BUS_FREQ = 15
 
@@ -78,7 +82,7 @@ metro_config['ID_list'] = [1, 0, 0]
 metro_config['walking_time1'] = 60.0
 metro_config['metro_time'] = 40.0 * 60.0
 metro_config['walking_time2'] = 60.0
-metro_config['metro_fee'] = 3.75
+metro_config['metro_fee'] = METRO_FARE
 p11100 = make_path(metro_config)
 
 
@@ -95,7 +99,7 @@ pnr_config['car_path_ID'] = 8
 pnr_config['transit_link_list'] = [9, 15, 106]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 2.75
+pnr_config['transit_fare'] = BUS_FARE
 pnr_config['before_drive_walking_time'] = 60.0
 pnr_config['switching_time'] = 60.0
 pnr_config['after_transit_walking_time'] = 60.0
@@ -115,7 +119,7 @@ pnr_config['car_path_ID'] = 9
 pnr_config['transit_link_list'] = [9, 15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 2.75
+pnr_config['transit_fare'] = BUS_FARE
 pnr_config['before_drive_walking_time'] = 60.0
 pnr_config['switching_time'] = 60.0
 pnr_config['after_transit_walking_time'] = 60.0
@@ -136,11 +140,11 @@ pnr_config['car_path_ID'] = 10
 pnr_config['transit_link_list'] = [15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 2.75
+pnr_config['transit_fare'] = BUS_FARE
 pnr_config['before_drive_walking_time'] = 60.0
 pnr_config['switching_time'] = 60.0
 pnr_config['after_transit_walking_time'] = 60.0
-pnr_config['transit_time'] = 7.5 * 60.0
+pnr_config['transit_time'] = BUS_FREQ / 2 * 60.0
 p11210 = make_path(pnr_config)
 
 pnr_config = dict()
@@ -156,7 +160,7 @@ pnr_config['car_path_ID'] = 11
 pnr_config['transit_link_list'] = [15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d3_parking
-pnr_config['transit_fare'] = 2.75
+pnr_config['transit_fare'] = BUS_FARE
 pnr_config['before_drive_walking_time'] = 60.0
 pnr_config['switching_time'] = 60.0
 pnr_config['after_transit_walking_time'] = 60.0
@@ -242,7 +246,7 @@ transit_config['O'] = 3
 transit_config['D'] = 1
 transit_config['link_list'] = [102, 3, 9, 15, 105]
 transit_config['path_ID'] = -1
-transit_config['transit_fare'] = 2.75
+transit_config['transit_fare'] = BUS_FARE
 transit_config['walking_time1'] = 60.0
 transit_config['walking_time2'] = 60.0
 transit_config['transit_time'] = BUS_FREQ / 2 * 60.0
@@ -262,7 +266,7 @@ pnr_config['car_path_ID'] = 12
 pnr_config['transit_link_list'] = [9, 15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d2_parking
-pnr_config['transit_fare'] = 2.75
+pnr_config['transit_fare'] = BUS_FARE
 pnr_config['before_drive_walking_time'] = 60.0
 pnr_config['switching_time'] = 60.0
 pnr_config['after_transit_walking_time'] = 60.0
@@ -338,7 +342,7 @@ pnr_config['car_path_ID'] = 13
 pnr_config['transit_link_list'] = [15, 105]
 pnr_config['transit_path_ID'] = -1
 pnr_config['parking_lot'] = d3_parking
-pnr_config['transit_fare'] = 2.75
+pnr_config['transit_fare'] = BUS_FARE
 pnr_config['before_drive_walking_time'] = 60.0
 pnr_config['switching_time'] = 60.0
 pnr_config['after_transit_walking_time'] = 60.0
@@ -377,13 +381,14 @@ trend = np.array([59857.4375, 69209.0000, 76571.9375, 83934.8750, 91297.8125, 98
 trend = trend / np.sum(trend)
 
 
+factor = 1.0
 demand_dict = dict()
 demand_dict[1] = dict()
 demand_dict[3] = dict()
 demand_dict[4] = dict()
-demand_dict[1][1] = 15000.0 * trend
-demand_dict[3][1] = 10000.0 * trend
-demand_dict[4][1] = 5000.0 * trend
+demand_dict[1][1] = 15000.0 * trend * factor
+demand_dict[3][1] = 10000.0 * trend * factor
+demand_dict[4][1] = 5000.0 * trend * factor
 
 
 ab_dict = dict()
