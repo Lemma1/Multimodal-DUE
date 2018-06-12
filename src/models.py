@@ -8,7 +8,7 @@ from MNM_mcnb import *
 import gp
 import shutil
 import pickle
-
+import time
 
 IMPLEMENT_TYPES = ['single_drive', 'multiple_drive', 'transit', 'pnr', 'metro']
 
@@ -18,9 +18,9 @@ T2M = 6.4 / 60.0 / 60.0 * 5.0
 UNIT_TIME = np.float(5)
 TAU_DEF = 1.0
 FLOW_SCALAR = 10.0
-CARPOOL_COST_MUL = 5.0
-TRANSIT_INCON = 5.0
-RNR_INCON =  5.0
+CARPOOL_COST_MUL = 1.0
+TRANSIT_INCON = 0.0
+RNR_INCON =  0.0
 
 class parking_lot():
   def __init__(self, base_price, link_ID, ave_parking_time, cap):
@@ -359,16 +359,14 @@ class Multimode_DUE():
     path_matrix = init_path_matrix
     gap_record = list()
     dta_list = list()
+    time_list = list()
+    start = time.time()
     for i in range(num_iters):
-      # print "1"
       # print path_matrix
       car_flow, truck_flow = self.form_demand_for_simulation(path_list, path_matrix)
-      # print "2"
       dta = self.get_simulation(car_flow, truck_flow, choice_dict)
-      # print "3"
       Lambda_matrix = self.get_Lambda_matrix(dta, path_list, path_matrix, demand_dict, ab_dict)
       # print Lambda_matrix
-      # print "4"
       gap = self.get_merit_gap(Lambda_matrix, path_matrix, path_list, demand_dict)
       if gd_method == 'GP':
         path_matrix = self.update_path_matrix(Lambda_matrix, path_matrix, path_list, demand_dict, i)
@@ -379,17 +377,14 @@ class Multimode_DUE():
       print i, gap
       gap_record.append(gap)
       dta_list.append(dta)
-      # try:
-      #   del dta
-      # except:
-      #   print "delete error"
-      #   pass
-      # print path_matrix
+      end = time.time()
+      time_list.append(end - start)
+
     car_flow, truck_flow = self.form_demand_for_simulation(path_list, path_matrix)
     dta = self.get_simulation(car_flow, truck_flow, choice_dict)
     cost_matrix = self.get_cost_matrix(dta, path_list)
     Lambda_matrix = self.get_Lambda_matrix(dta, path_list, path_matrix, demand_dict, ab_dict)
-    pickle.dump([path_matrix, Lambda_matrix, cost_matrix, gap_record], open(gd_method + name + ".pickle", 'wb'))
+    pickle.dump([path_matrix, Lambda_matrix, cost_matrix, gap_record, time_list], open(gd_method + name + ".pickle", 'wb'))
     dta_list.append(dta)
     return path_matrix, dta_list, gap_record
 
