@@ -30,4 +30,4 @@ To check the details of the experiments in exp_config.py, please refer to the pa
 
 ### Questions
 
-For any questions, please contact Wei Ma (Lemma171@gmail.com) and Xidong Pi (xpi@andrew.cmu.edu).
+For any question, please contact Wei Ma (Lemma171@gmail.com) and Xidong Pi (xpi@andrew.cmu.edu).
