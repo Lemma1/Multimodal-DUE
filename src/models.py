@@ -331,14 +331,15 @@ class Multimode_DUE():
         tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
         tmp_path_idx_list = list(map(lambda x: path_list.index(x), tmp_path_list))
         for t in range(self.num_assign_interval):
-          # tau = 1.0 / (np.max(Lambda_matrix[tmp_path_idx_list, t]) - np.mean(Lambda_matrix[tmp_path_idx_list, t])) * TAU_DEF
-          tau = 400
+          tau = 1.0 / (np.max(Lambda_matrix[tmp_path_idx_list, t]) - np.mean(Lambda_matrix[tmp_path_idx_list, t])) * TAU_DEF
+          # tau = 400
           if m == 'direct':
             new_path_matrix[tmp_path_idx_list, t] = gp.get_projection(demand_dict[O][D][t], path_matrix[tmp_path_idx_list, t] - tau * Lambda_matrix[tmp_path_idx_list, t])
           if m == 'cvx':
             new_path_matrix[tmp_path_idx_list, t] = gp.solve_cvx(demand_dict[O][D][t], path_matrix[tmp_path_idx_list, t] - tau * Lambda_matrix[tmp_path_idx_list, t])
     new_path_matrix = np.maximum(new_path_matrix, 0.0)
-    return new_path_matrix * LAMBDA + (1-LAMBDA) * path_matrix
+    # return new_path_matrix * LAMBDA + (1-LAMBDA) * path_matrix
+    return new_path_matrix
 
   def update_path_matrix2(self, Lambda_matrix, path_matrix, path_list, demand_dict, iter):
     LAMBDA = 0.2 / np.sqrt(iter + 1)
