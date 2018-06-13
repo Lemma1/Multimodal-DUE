@@ -2,14 +2,16 @@ import os
 import numpy as np
 from collections import OrderedDict
 import sys
-sys.path.append("/home/lemma/Documents/MAC-POSTS/side_project/network_builder")
 import MNMAPI
+# change this folder to include the MNM_mcnb.py
+sys.path.append("/home/lemma/Documents/MAC-POSTS/side_project/network_builder")
 from MNM_mcnb import *
 import gp
 import shutil
 import pickle
 import time
 
+# implemented 
 IMPLEMENT_TYPES = ['single_drive', 'multiple_drive', 'transit', 'pnr', 'metro']
 
 BUS_FREQ = 15
@@ -22,6 +24,9 @@ CARPOOL_COST_MUL = 1.0
 TRANSIT_INCON = 0.0
 RNR_INCON =  0.0
 
+
+
+''' Parking Lot object '''
 class parking_lot():
   def __init__(self, base_price, link_ID, ave_parking_time, cap):
     self.base_price = base_price
@@ -36,18 +41,8 @@ class parking_lot():
     occ = dta.get_car_link_out_num(self.link_ID, t) / FLOW_SCALAR
     return self.ave_parking_time / (1 - occ / self.cap)
 
-# class link():
-#   def __init__(self):
-#     pass
 
-#   def update_cc(self, in_cc, out_cc):
-#     self.in_cc = in_cc
-#     self.out_cc = out_cc
-
-#   def get_tt(self, t):
-#     return 0
-
-
+''' Interface of passenger path '''
 class base_path(object):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, ID_list, O, D):
     self.target_time = target_time
@@ -58,15 +53,19 @@ class base_path(object):
     self.D = D
     self.path_type = path_type
 
+  # return the generalized cost of the passenger path departing at time t
   def get_cost(self, t, link_ID_list, dta):
     raise Exception('Method in base class should not be called!')
 
+  # return the travel time departing at time t
   def get_travel_time(self, t, link_ID_list, dta):
     raise Exception('Method in base class should not be called!')
 
+  # return the late or early penalty
   def get_wrongtime_penalty(self, arrival_time):
     return np.maximum(self.late_penalty * (arrival_time - self.target_time), self.early_penalty * (self.target_time -arrival_time))
 
+''' solo driving and carpool '''
 class driving_route(base_path):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, O, D, ID_list, link_list, path_ID, number_people, parking_lot, walking_time1, walking_time2):
     assert(number_people >= 1)
@@ -99,6 +98,7 @@ class driving_route(base_path):
     late_penalty = self.get_wrongtime_penalty(t + tt)
     return T2M * tt + late_penalty + self.get_carpool_cost() + self.get_amortized_parkingfee()
 
+''' Bus '''
 class transit_route(base_path):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, O, D, ID_list, link_list, path_ID, transit_fare, walking_time1, walking_time2, transit_time):
     super(transit_route, self).__init__(path_type, target_time, early_penalty, late_penalty, ID_list, O, D)
@@ -129,6 +129,7 @@ class transit_route(base_path):
     late_penalty = self.get_wrongtime_penalty(t + tt)
     return T2M * tt + late_penalty + self.get_transit_fee() + self.get_transit_inconvenience()
 
+''' Park and ride '''
 class park_ride_route(base_path):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, O, D, ID_list, car_link_list, car_path_ID, 
                         transit_link_list, transit_path_ID, parking_lot, transit_fare, 
@@ -151,6 +152,7 @@ class park_ride_route(base_path):
     late_penalty = self.get_wrongtime_penalty(t + tt)
     return T2M * tt + late_penalty + self.driving_part.get_amortized_parkingfee() + self.transit_part.get_transit_fee() + self.get_pnr_inconvenience()
 
+''' Metro '''
 class metro(base_path):
   def __init__(self, path_type, target_time, early_penalty, late_penalty, O, D, ID_list, walking_time1, metro_time, walking_time2, metro_fee):
     super(metro, self).__init__(path_type, target_time, early_penalty, late_penalty, ID_list, O, D)
@@ -173,7 +175,8 @@ class metro(base_path):
     late_penalty = self.get_wrongtime_penalty(t + tt)
     return  T2M * tt + late_penalty + self.get_metro_fee() + self.get_metro_inconvenience()
 
-
+''' This function is used to create a path object given the config file'''
+# example of config file can be found in exp_config.py 
 def make_path(config):
   print "Creating route for:", config['mode']
   assert (config['mode'] in IMPLEMENT_TYPES)
@@ -202,10 +205,10 @@ def make_path(config):
   if config['mode'] == 'metro':
     p = metro(config['mode'], config['target_time'], config['early_penalty'], config['late_penalty'],
                       config['O'], config['D'], config['ID_list'], config['walking_time1'], config['metro_time'], config['walking_time2'], config['metro_fee'])
-
   return p
 
 
+''' Implementation of MMDUE model '''
 class Multimode_DUE():
   def __init__(self, nb):
     print "Init simulation"
@@ -254,24 +257,14 @@ class Multimode_DUE():
     data_folder = '../data/input_files_small_multiclass'
     cache_folder = 'cache'
     nb = MNM_network_builder()
-    # print '11'
     nb.load_from_folder(data_folder)
-    # print '12'
     nb.update_demand_path(car_flow.flatten(order = 'F'), truck_flow.flatten(order = 'F'), choice_dict)
-    # print '13'
     nb.dump_to_folder(cache_folder)
-    # print '14'
     link_ID_list = list(map(lambda x: x.ID, nb.link_list))
     dta = MNMAPI.mcdta_api()
-    # print '15'
     dta.initialize(cache_folder)
-    # print '16'
     dta.register_links(link_ID_list)
-    # print '17'
     dta.run_whole()
-    # print '18'
-    # shutil.rmtree(cache_folder)
-    # print '19'
     return dta
 
   def get_cost_matrix(self, dta, path_list):
