@@ -25,7 +25,6 @@ TRANSIT_INCON = 0.0
 RNR_INCON =  0.0
 
 
-
 ''' Parking Lot object '''
 class parking_lot():
   def __init__(self, base_price, link_ID, ave_parking_time, cap):
@@ -275,8 +274,20 @@ class Multimode_DUE():
       passenger_path = path_list[i]
       # print passenger_path
       for t in range(self.num_assign_interval):
-        cost_matrix[i, t] = passenger_path.get_cost(np.float(t * assign_freq), link_ID_list, dta)
+        cost_matrix[i, t] = passenger_path.get_travel_time(np.float(t * assign_freq), link_ID_list, dta)
     return cost_matrix
+
+
+  # def get_tt_matrix(self, dta, path_list):
+  #   cost_matrix = np.zeros((len(path_list), self.num_assign_interval))
+  #   assign_freq = self.nb.config.config_dict['DTA']['assign_frq']
+  #   link_ID_list = list(map(lambda x: x.ID, self.nb.link_list))
+  #   for i in range(len(path_list)):
+  #     passenger_path = path_list[i]
+  #     # print passenger_path
+  #     for t in range(self.num_assign_interval):
+  #       cost_matrix[i, t] = passenger_path.get_cost(np.float(t * assign_freq), link_ID_list, dta)
+  #   return cost_matrix
 
   def get_Lambda_matrix(self, dta, path_list, path_matrix, demand_dict, ab_dict):
     Lambda_matrix = self.get_cost_matrix(dta, path_list)
@@ -315,24 +326,25 @@ class Multimode_DUE():
         gap += np.sum(path_matrix[tmp_path_idx_list, :] * (Lambda_matrix[tmp_path_idx_list, :] - Pi))
     return gap / np.sum(path_matrix)
 
-  def update_path_matrix(self, Lambda_matrix, path_matrix, path_list, demand_dict, iter, m = 'direct'):
-    LAMBDA = 0.1 / np.sqrt(iter + 1)
-    new_path_matrix = np.zeros(path_matrix.shape)
-    # tmp_target_matrix = path_matrix - TAU / np.sqrt(iter + 1) * Lambda_matrix
-    for O in demand_dict.keys():
-      for D in demand_dict[O].keys():
-        tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
-        tmp_path_idx_list = list(map(lambda x: path_list.index(x), tmp_path_list))
-        for t in range(self.num_assign_interval):
-          tau = 1.0 / (np.max(Lambda_matrix[tmp_path_idx_list, t]) - np.mean(Lambda_matrix[tmp_path_idx_list, t])) * TAU_DEF
-          # tau = 400
-          if m == 'direct':
-            new_path_matrix[tmp_path_idx_list, t] = gp.get_projection(demand_dict[O][D][t], path_matrix[tmp_path_idx_list, t] - tau * Lambda_matrix[tmp_path_idx_list, t])
-          if m == 'cvx':
-            new_path_matrix[tmp_path_idx_list, t] = gp.solve_cvx(demand_dict[O][D][t], path_matrix[tmp_path_idx_list, t] - tau * Lambda_matrix[tmp_path_idx_list, t])
-    new_path_matrix = np.maximum(new_path_matrix, 0.0)
-    # return new_path_matrix * LAMBDA + (1-LAMBDA) * path_matrix
-    return new_path_matrix
+  # def update_path_matrix(self, Lambda_matrix, path_matrix, path_list, demand_dict, iter, m = 'direct'):
+  #   print "s"
+  #   LAMBDA = 0.1 / np.sqrt(iter + 1)
+  #   new_path_matrix = np.zeros(path_matrix.shape)
+  #   # tmp_target_matrix = path_matrix - TAU / np.sqrt(iter + 1) * Lambda_matrix
+  #   for O in demand_dict.keys():
+  #     for D in demand_dict[O].keys():
+  #       tmp_path_list = list(filter(lambda x: x.O == O and x.D == D, path_list))
+  #       tmp_path_idx_list = list(map(lambda x: path_list.index(x), tmp_path_list))
+  #       for t in range(self.num_assign_interval):
+  #         tau = 1.0 / (np.max(Lambda_matrix[tmp_path_idx_list, t]) - np.mean(Lambda_matrix[tmp_path_idx_list, t])) * TAU_DEF
+  #         # tau = 400
+  #         if m == 'direct':
+  #           new_path_matrix[tmp_path_idx_list, t] = gp.get_projection(demand_dict[O][D][t], path_matrix[tmp_path_idx_list, t] - tau * Lambda_matrix[tmp_path_idx_list, t])
+  #         if m == 'cvx':
+  #           new_path_matrix[tmp_path_idx_list, t] = gp.solve_cvx(demand_dict[O][D][t], path_matrix[tmp_path_idx_list, t] - tau * Lambda_matrix[tmp_path_idx_list, t])
+  #   new_path_matrix = np.maximum(new_path_matrix, 0.0)
+  #   # return new_path_matrix * LAMBDA + (1-LAMBDA) * path_matrix
+  #   return new_path_matrix
 
   def update_path_matrix2(self, Lambda_matrix, path_matrix, path_list, demand_dict, iter):
     LAMBDA = 0.2 / np.sqrt(iter + 1)
@@ -363,6 +375,7 @@ class Multimode_DUE():
       # print Lambda_matrix
       gap = self.get_merit_gap(Lambda_matrix, path_matrix, path_list, demand_dict)
       if gd_method == 'GP':
+        print "d"
         path_matrix = self.update_path_matrix(Lambda_matrix, path_matrix, path_list, demand_dict, i)
       if gd_method == "MSA":
         path_matrix = self.update_path_matrix2(Lambda_matrix, path_matrix, path_list, demand_dict, i)
@@ -377,8 +390,9 @@ class Multimode_DUE():
     car_flow, truck_flow = self.form_demand_for_simulation(path_list, path_matrix)
     dta = self.get_simulation(car_flow, truck_flow, choice_dict)
     cost_matrix = self.get_cost_matrix(dta, path_list)
+    tt_matrix = self.get_tt_matrix(dta, path_list)
     Lambda_matrix = self.get_Lambda_matrix(dta, path_list, path_matrix, demand_dict, ab_dict)
-    pickle.dump([path_matrix, Lambda_matrix, cost_matrix, gap_record, time_list], open(gd_method + name + ".pickle", 'wb'))
+    pickle.dump([path_matrix, Lambda_matrix, cost_matrix, tt_matrix, gap_record, time_list], open(gd_method + name + ".pickle", 'wb'))
     dta_list.append(dta)
     return path_matrix, dta_list, gap_record
 
