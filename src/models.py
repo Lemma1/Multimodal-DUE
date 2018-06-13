@@ -275,7 +275,7 @@ class Multimode_DUE():
       passenger_path = path_list[i]
       # print passenger_path
       for t in range(self.num_assign_interval):
-        cost_matrix[i, t] = passenger_path.get_travel_time(np.float(t * assign_freq), link_ID_list, dta)
+        cost_matrix[i, t] = passenger_path.get_cost(np.float(t * assign_freq), link_ID_list, dta)
     return cost_matrix
 
   def get_tt_matrix(self, dta, path_list):
@@ -286,7 +286,7 @@ class Multimode_DUE():
       passenger_path = path_list[i]
       # print passenger_path
       for t in range(self.num_assign_interval):
-        cost_matrix[i, t] = passenger_path.get_cost(np.float(t * assign_freq), link_ID_list, dta)
+        cost_matrix[i, t] = passenger_path.get_travel_time(np.float(t * assign_freq), link_ID_list, dta)
     return cost_matrix
 
   def get_Lambda_matrix(self, dta, path_list, path_matrix, demand_dict, ab_dict):
