@@ -14,6 +14,10 @@ Implemented by Wei Ma and Xidong Pi (AlanPi1992), advised by Sean Qian, Civil an
 
 Please clone the whole repo, and run renner.ipynb using jupyter notebook.
 
+### Experiments
+
+To check the details of the experiments in exp_config.py, please refer to the paper.
+
 ### File specifications
 
 - src/exp_config.py: experiment settings in the paper
