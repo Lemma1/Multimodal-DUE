@@ -12,7 +12,7 @@ Implemented by Wei Ma and Xidong Pi (AlanPi1992), advised by Sean Qian, Civil an
 
 ### Instructions
 
-Please clone the whole repo, and run renner.ipynb using jupyter notebook.
+Please clone the whole repo, and run runner.ipynb using jupyter notebook.
 
 ### Experiments
 
