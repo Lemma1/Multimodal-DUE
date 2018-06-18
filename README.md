@@ -1,4 +1,4 @@
-## Multi-modal Dynamic User Equilibrium (MMDUE) with Multi-class Vehicles, Ridesharing, Public Transit and Parking
+## A general formulation for multi-modal dynamic traffic assignment considering multi-class vehicles, public transit and parking
 
 Implemented by Wei Ma and Xidong Pi (AlanPi1992), advised by Sean Qian, Civil and environmental engineering, Carnegie Mellon University. 
 
